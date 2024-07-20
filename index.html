@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Chat with PeerJS</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #chat {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .server {
+            color: blue;
+        }
+
+        .client {
+            color: green;
+        }
+
+        .system {
+            color: red;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2/dist/peerjs.min.js"></script>
+</head>
+
+<body class="container mt-5">
+    <h1>WebRTC Chat with PeerJS</h1>
+    <div class="form-group">
+        <button id="startServerBtn" class="btn btn-primary">Start Server</button>
+        <button id="findServersBtn" class="btn btn-secondary">Find Servers</button>
+    </div>
+    <div id="serverList" class="form-group"></div>
+    <div class="form-group">
+        <textarea id="message" class="form-control" rows="3" placeholder="Type your message here..."></textarea>
+        <button id="sendMessageBtn" class="btn btn-success mt-2">Send</button>
+    </div>
+    <div id="chat" class="border p-3"></div>
+
+    <script>
+        const startServerBtn = document.getElementById('startServerBtn');
+        const findServersBtn = document.getElementById('findServersBtn');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const serverList = document.getElementById('serverList');
+        const messageInput = document.getElementById('message');
+        const chatDiv = document.getElementById('chat');
+
+        let peer;
+        let conn;
+        let isServer = false;
+
+        // Start PeerJS server
+        startServerBtn.addEventListener('click', () => {
+            isServer = true;
+            peer = new Peer(`${Math.floor(Math.random() * 1000)}`);
+
+            peer.on('open', id => {
+                console.log('Server Peer ID:', id);
+                displayMessage(`Server started with ID: ${id}`, 'server');
+                // Store the server ID for discovery purposes
+                localStorage.setItem('serverId', id);
+            });
+
+            peer.on('connection', connection => {
+                conn = connection;
+                conn.on('data', data => {
+                    displayMessage(data, 'client');
+                });
+                conn.on('open', () => {
+                    displayMessage('Client connected', 'system');
+                });
+                conn.on('close', () => {
+                    displayMessage('Client disconnected', 'system');
+                });
+                conn.on('error', err => {
+                    console.error('Connection error:', err);
+                    displayMessage('Connection error', 'system');
+                });
+            });
+
+            peer.on('error', err => {
+                console.error('Peer error:', err);
+                displayMessage('Peer error', 'system');
+            });
+        });
+
+        // Find available servers
+        findServersBtn.addEventListener('click', () => {
+            // Get server ID from localStorage
+            const serverId = "serverId"
+            if (serverId) {
+                const listItem = document.createElement('div');
+                listItem.innerHTML = `<button class="btn btn-link">${serverId}</button>`;
+                listItem.querySelector('button').addEventListener('click', () => connectToServer(serverId));
+                serverList.appendChild(listItem);
+            } else {
+                displayMessage('No servers found.', 'system');
+            }
+        });
+
+        // Connect to a server
+        function connectToServer(serverId) {
+            peer = new Peer();
+
+            peer.on('open', id => {
+                console.log('Client Peer ID:', id);
+                displayMessage(`Client started with ID: ${id}`, 'client');
+                conn = peer.connect(serverId);
+
+                conn.on('open', () => {
+                    console.log('Connected to server:', serverId);
+                    displayMessage(`Connected to server: ${serverId}`, 'client');
+                });
+
+                conn.on('data', data => {
+                    displayMessage(data, 'server');
+                });
+
+                conn.on('error', err => {
+                    console.error('Connection error:', err);
+                    displayMessage('Connection error', 'system');
+                });
+
+                conn.on('close', () => {
+                    displayMessage('Connection closed', 'system');
+                });
+            });
+
+            peer.on('error', err => {
+                console.error('Peer error:', err);
+                displayMessage('Peer error', 'system');
+            });
+        }
+
+        // Send chat message
+        sendMessageBtn.addEventListener('click', () => {
+            const message = messageInput.value;
+            if (conn && conn.open) {
+                conn.send(message);
+                displayMessage(message, isServer ? 'server' : 'client');
+                messageInput.value = '';
+            } else {
+                displayMessage('Connection is not open.', 'system');
+            }
+        });
+
+        // Display chat message
+        function displayMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.classList.add(sender);
+            chatDiv.appendChild(messageDiv);
+        }
+    </script>
+</body>
+
+</html>

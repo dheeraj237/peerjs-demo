@@ -1,0 +1,26 @@
+{
+  "name": "peerjs-demo",
+  "version": "1.0.0",
+  "description": "peerjs webrtc demo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dheeraj237/peerjs-demo.git"
+  },
+  "keywords": [
+    "peerjs",
+    "webrtc"
+  ],
+  "author": "dheerusuthar@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dheeraj237/peerjs-demo/issues"
+  },
+  "homepage": "https://github.com/dheeraj237/peerjs-demo#readme",
+  "devDependencies": {
+    "lite-server": "^2.6.1"
+  }
+}
